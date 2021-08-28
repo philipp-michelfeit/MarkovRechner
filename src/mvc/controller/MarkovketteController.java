@@ -1,144 +1,158 @@
 //*****************************************************************************
-//** Copyright Â© 2011 Philipp Michelfeit, All Rights Reserved 				 **
+//** Copyright © 2011 Philipp Michelfeit, All Rights Reserved 				 **
 //*****************************************************************************
 
 package mvc.controller;
 
-import mvc.model.MarkovketteModel;
-import mvc.view.MarkovketteView;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import mvc.view.MarkovketteView;
+import mvc.model.MarkovketteModel;
+
 /**
- * Der Controller muss sowohl View als auch Model kennen, da dieser fÃ¼r die
+ * Der Controller muss sowohl View als auch Model kennen, da dieser für die
  * Kommunikation zwischen beiden sorgt
- *
+ * 
  * @author Philipp Michelfeit, 11E1FA
  * @version 1.0
  */
 public class MarkovketteController {
 
-    // ************************************************************************
-    // ** Instanzfelder der Klasse MarkovketteController
-    // ************************************************************************
-    private MarkovketteModel model;
+	// ************************************************************************
+	// ** Instanzfelder der Klasse MarkovketteController
+	// ************************************************************************
+	private int zustaende;
 
-    private MarkovketteView view;
+	private MarkovketteModel model;
 
-    // ************************************************************************
-    // ** Konstruktor der Klasse MarkovketteController
-    // ************************************************************************
-    public MarkovketteController(int zustaende) {
+	private MarkovketteView view;
 
-        this.model = new MarkovketteModel(zustaende);
-        this.view = new MarkovketteView(zustaende);
+	// ************************************************************************
+	// ** Konstruktor der Klasse MarkovketteController
+	// ************************************************************************
+	public MarkovketteController(int zustaende) {
 
-        this.view
-                .setStartverteilungLoeschenListener(new StartverteilungLoeschenListener());
-        this.view.setAllesLoeschenListener(new AllesLoeschenListener());
-        this.view
-                .setFolgeverteilungKopierenListener(new FolgeverteilungKopierenListener());
-        this.view
-                .setFolgeverteilungBerechnenListener(new FolgeverteilungBerechnenListener());
-        this.view
-                .setStationaereVerteilungBerechnenListener(new StationaereVerteilungBerechnenListener());
+		this.zustaende = zustaende;
+		this.model = new MarkovketteModel(zustaende);
+		this.view = new MarkovketteView(zustaende);
 
-        this.view.setVisible(true);
-    }
+		this.view
+				.setStartverteilungLoeschenListener(new StartverteilungLoeschenListener());
+		this.view.setAllesLoeschenListener(new AllesLoeschenListener());
+		this.view
+				.setFolgeverteilungKopierenListener(new FolgeverteilungKopierenListener());
+		this.view
+				.setFolgeverteilungBerechnenListener(new FolgeverteilungBerechnenListener());
+		this.view
+				.setStationaereVerteilungBerechnenListener(new StationaereVerteilungBerechnenListener());
+	}
 
-    // Innere Klassen
-    class StartverteilungLoeschenListener implements ActionListener {
+	// Innere Klassen
+	class StartverteilungLoeschenListener implements ActionListener {
 
-        // TODO: Funktioniert
-        public void actionPerformed(ActionEvent event) {
-            // TODO Auto-generated method stub
+		public void actionPerformed(ActionEvent event) {
 
-            try {
+			model.updateModel(null, view.getFolgeverteilungValues(),
+					view.getUebergangsmatrixValues());
+			view.updateView(model.getStartverteilung(),
+					model.getFolgeverteilung(), model.getUebergangsmatrix());
+		}
+	}
 
-//				TODO: updateModel funktioniert noch nicht richtig !
-//				model.updateModel(null, view
-//						.getFolgeverteilungValues(), view
-//						.getUebergangsmatrixValues());
-                view.updateView(null, model.getFolgeverteilung(), model
-                        .getUebergangsmatrix());
+	class AllesLoeschenListener implements ActionListener {
 
-            } catch (Exception exception) {
-                // TODO: handle exception
-            }
+		public void actionPerformed(ActionEvent e) {
 
-        }
-    }
+			model.updateModel(null, null, null);
+			view.updateView(model.getStartverteilung(),
+					model.getFolgeverteilung(), model.getUebergangsmatrix());
+		}
+	}
 
-    class AllesLoeschenListener implements ActionListener {
+	class FolgeverteilungKopierenListener implements ActionListener {
 
-        // TODO: Funktioniert
-        public void actionPerformed(ActionEvent e) {
-            // TODO Auto-generated method stub
+		public void actionPerformed(ActionEvent e) {
 
-            try {
+			// Alle Textfelder aus dem View auslesen und im Modell speichern
+			model.updateModel(view.getStartverteilungValues(),
+					view.getFolgeverteilungValues(),
+					view.getUebergangsmatrixValues());
 
-//				model.updateModel(view.getStartverteilungValues(), view
-//						.getFolgeverteilungValues(), view
-//						.getUebergangsmatrixValues());
-                view.updateView(null, null, null);
+			// Folgeverteilung im Modell löschen und Startverteilung auf
+			// Folgeverteilung setzen
+			model.updateModel(model.getFolgeverteilung(), null,
+					model.getUebergangsmatrix());
 
-            } catch (Exception exception) {
-                // TODO: handle exception
+			// View updaten
+			view.updateView(model.getStartverteilung(),
+					model.getFolgeverteilung(), model.getUebergangsmatrix());
+		}
+	}
 
-            }
-        }
-    }
+	class FolgeverteilungBerechnenListener implements ActionListener {
 
-    class FolgeverteilungKopierenListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
 
-        // Funktioniert noch nicht !
-        public void actionPerformed(ActionEvent e) {
-            // TODO Auto-generated method stub
+			// Start und Übergangsmatrix in Modell übernehmen
+			model.updateModel(view.getStartverteilungValues(), null,
+					view.getUebergangsmatrixValues());
 
-            try {
-                // TODO: FUNKTIONIERT noch nicht !!!
-                // Folgeverteilung aus dem model in den
-                // Startverteilungstextfeldern setzen
+			// Folgeverteilung berechnen
+			model.setFolgeverteilung(model.multipliziere(
+					model.getStartverteilung(), model.getUebergangsmatrix()));
 
-            } catch (Exception exception) {
-                // TODO: handle exception
-            }
-        }
-    }
+			// Folgeverteilung in View eintragen
+			view.updateView(model.getStartverteilung(),
+					model.getFolgeverteilung(), model.getUebergangsmatrix());
+		}
+	}
 
-    class FolgeverteilungBerechnenListener implements ActionListener {
+	class StationaereVerteilungBerechnenListener implements ActionListener {
 
-        // Funktioniert noch nicht !
-        public void actionPerformed(ActionEvent e) {
+		public void actionPerformed(ActionEvent e) {
 
-            try {
-                // TODO: PrÃ¼fen, ob Eingaben in textfeldern korrekt,
-                // Ãœbergangsmatrix aus textfeldern ins model aufnehmen,
-                // Startverteilung aus textfeldern ins model aufnehmen,
-                // Folgeverteilung aus textfeldern ins model aufnehmen,
-                // Folgeverteilung im View setzen
+			int count = 0; // Schleifenzähler
+			double epsilon = 0.0000001; // Schranke für Gleichheit
+			double[] folgev_alt = new double[zustaende];
+			double[] folgev_neu = new double[zustaende];
+			int isStationaereVerteilung;
 
-                model.setFolgeverteilung(model.multipliziere(model
-                        .getStartverteilung(), model.getUebergangsmatrix()));
+			// Start und Übergangsmatrix in Modell übernehmen
+			model.updateModel(view.getStartverteilungValues(), null,
+					view.getUebergangsmatrixValues());
 
-            } catch (Exception exception) {
-                // TODO: handle exception
-            }
-        }
-    }
+			do {
+				count++; // Schleifenzaehler inkrementieren
+				isStationaereVerteilung = 0;
 
-    class StationaereVerteilungBerechnenListener implements ActionListener {
+				folgev_alt = model.getFolgeverteilung();
 
-        public void actionPerformed(ActionEvent e) {
-            // TODO Auto-generated method stub
-            try {
-                // TODO: Methode ausfÃ¼hren
+				// Folgeverteilung berechnen
+				model.setFolgeverteilung(model.multipliziere(
+						model.getStartverteilung(), model.getUebergangsmatrix()));
 
-            } catch (Exception exception) {
-                // TODO: handle exception
-            }
-        }
-    }
+				folgev_neu = model.getFolgeverteilung();
 
+				// Folgeverteilung neu in Startverteilung kopieren
+				model.setStartverteilung(folgev_neu);
+
+				// Sind die Abweichungen der Folgeverteilung kleiner epsilon
+				for (int i = 0; i < zustaende; i++) {
+					if (Math.abs(folgev_alt[i] - folgev_neu[i]) > epsilon) {
+						isStationaereVerteilung = isStationaereVerteilung + 1;
+					}
+				}
+			} while (count < 1000 && isStationaereVerteilung > 0);
+
+			// Start und Übergangsmatrix in Modell übernehmen
+			view.updateView(model.getStartverteilung(),
+					model.getFolgeverteilung(), model.getUebergangsmatrix());
+
+			// Solange berechnen, bis der neue Wert aus dem
+			// Folgeverteilungstextfeld alten Wert
+			// entspricht.
+			// Wenn nach 1000 Durchläufen nicht konvergiert, dann Abbruch
+		}
+	}
 }
